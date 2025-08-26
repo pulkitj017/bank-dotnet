@@ -1,4 +1,0 @@
-Dependency		Current Version		Latest Version
-  Microsoft.EntityFrameworkCore         7.0.5	7.0.20                                  	                    
-  Microsoft.EntityFrameworkCore.Design  7.0.5	8.0.8                                   	                    
-  Microsoft.EntityFrameworkCore.Tools   7.0.5	8.0.8                                   	                    
