@@ -1,0 +1,62 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      dotnet: 8.0
+    commands:
+      - echo "Installing prerequisites..."
+      - apt-get update
+      - apt-get install -y wget curl unzip apt-transport-https software-properties-common
+
+      - echo "Installing .NET SDKs (7.0 & 8.0)..."
+      - curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+      - chmod +x dotnet-install.sh
+      - ./dotnet-install.sh --version 8.0.413 --install-dir $HOME/dotnet
+      - ./dotnet-install.sh --version 7.0.410 --install-dir $HOME/dotnet
+      - echo "$HOME/dotnet" >> $CODEBUILD_SRC_DIR/env_path.txt
+      - export PATH=$HOME/dotnet:$PATH
+      - export DOTNET_ROOT=$HOME/dotnet
+      - $HOME/dotnet/dotnet --info
+
+      - echo "Installing PowerShell..."
+      - wget https://github.com/PowerShell/PowerShell/releases/download/v7.5.0/powershell_7.5.0-1.deb_amd64.deb
+      - dpkg -i powershell_7.5.0-1.deb_amd64.deb || true
+      - apt-get --fix-broken install -y
+      - pwsh --version
+      - rm -rf powershell_7.5.0-1.deb_amd64.deb
+
+  build:
+    commands:
+      - echo "Running dotnet restore..."
+      - export PATH=$HOME/dotnet:$PATH
+      - export DOTNET_ROOT=$HOME/dotnet
+      - dotnet restore
+      - dotnet --list-sdks
+
+      - echo "Running get-details-1.sh..."
+      - bash ./get-details-1.sh
+      - echo "After get-details-1.sh:"
+      - ls -l
+
+      - echo "Running get-details-2.sh..."
+      - bash ./get-details-2.sh
+      - echo "After get-details-2.sh:"
+      - ls -l
+
+      - echo "Running merge-details.ps1..."
+      - pwsh ./merge-details.ps1
+      - echo "After merge-details.ps1:"
+      - ls -l
+      - cat sbom-result.txt || echo "sbom-result.txt not found"
+
+      - echo "Running trivy.sh..."
+      - bash ./trivy.sh
+      - echo "After trivy.sh:"
+      - ls -l
+      - cat trivy-vulnerabilities.txt || echo "trivy-vulnerabilities.txt not found"
+
+artifacts:
+  files:
+    - sbom-result.txt
+    - trivy-vulnerabilities.txt
